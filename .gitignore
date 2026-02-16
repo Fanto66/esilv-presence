@@ -1,0 +1,5 @@
+#Variables d'environnement
+.env
+
+#Fichiers de session
+session.json
