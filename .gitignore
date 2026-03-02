@@ -1,5 +1,6 @@
 #Variables d'environnement
 .env
 
-#Fichiers de session
-session.json
+# Fichiers cache
+__pycache__/
+*.pyc
