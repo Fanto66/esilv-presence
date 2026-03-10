@@ -2,6 +2,8 @@ from email.mime import message
 import time
 import random
 from datetime import datetime
+import logging
+logging.basicConfig(level=logging.INFO)
 
 import requests
 from cours import Cours
@@ -19,14 +21,14 @@ class Utilisateur:
 
     def maj_cours_du_jour(self): #Récupère les cours du jour et les ajoute au planning
         if not self.page:
-            print("Erreur : L'utilisateur doit être connecté pour récupérer les cours.")
+            logging.error("Erreur : L'utilisateur doit être connecté pour récupérer les cours.")
             return
         
-        print(f"Suppression des cours de {self.email}...")
+        logging.info(f"Suppression des cours de {self.email}...")
 
         self.planning.clear() #on vide le planning
 
-        print(f"Récupération des cours pour {self.email}...")
+        logging.info(f"Récupération des cours pour {self.email}...")
 
         self.page.goto("https://my.devinci.fr/student/presences/")
 
@@ -34,7 +36,7 @@ class Utilisateur:
         self.page.wait_for_selector("body")
         contenu = self.page.inner_text("body").lower()
         if "Pas de cours de prévu" in contenu:
-            print(f"Aucun cours prévu aujourd'hui pour {self.email}.")
+            logging.info(f"Aucun cours prévu aujourd'hui pour {self.email}.")
             self.derniere_maj = datetime.datetime.now()
             return
 
@@ -64,7 +66,7 @@ class Utilisateur:
             presence = cols[3].query_selector("a")
             if presence:
                 presence_link = presence.get_attribute("href")
-            print(f"{nom_cours} ({horaires}) par {intervenant}) lu pour {self.email}")
+            logging.info(f"{nom_cours} ({horaires}) par {intervenant}) lu pour {self.email}")
 
             self.planning.append(Cours(
                 identifiant=presence_link.split("/")[-1] if presence_link else None,
@@ -77,7 +79,7 @@ class Utilisateur:
 
     
     def se_connecter(self, playwright_instance, mot_de_passe):
-        print(f"Connexion de {self.email}...")
+        logging.info(f"Connexion de {self.email}...")
         browser = playwright_instance.chromium.launch(headless=False)
         self.browser_context = browser.new_context()
         self.page = self.browser_context.new_page()
@@ -96,9 +98,9 @@ class Utilisateur:
 
         self.page.wait_for_url("https://my.devinci.fr/**")
 
-        print(f"{self.email} connecté avec succès !")
+        logging.info(f"{self.email} connecté avec succès !")
 
     def notifier(self, message):
         url = "https://ntfy.sh/esilv_attendance_romain"
         requests.post(url, data=message)
-        print(f"Notification pour {self.email}: {message}")
+        logging.info(f"Notification pour {self.email}: {message}")
