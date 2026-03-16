@@ -4,3 +4,6 @@
 # Fichiers cache
 __pycache__/
 *.pyc
+
+#Fichiers de test
+html_files/
