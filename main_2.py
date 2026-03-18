@@ -75,32 +75,32 @@ def main():
                     logging.info(f"Le cours {cours.identifiant} est dans la fenêtre 1 de notification pour {utilisateur.email}.")
                     etat_appel = cours.type_appel()
                     if etat_appel == "open":
-                        utilisateur.notifier(f"Le cours {cours.identifiant} est ouvert !")
+                        utilisateur.notifier(f"Le cours {cours.identifiant} - {cours.denomination} est ouvert !")
                         cours.deja_notifie = True
                     elif etat_appel == "deja_present":
-                        logging.info(f"Le cours {cours.identifiant} est déjà noté présent pour {utilisateur.email}.")
+                        logging.info(f"Le cours {cours.identifiant} - {cours.denomination} est déjà noté présent pour {utilisateur.email}.")
                         cours.deja_notifie = True
                     elif etat_appel == "closed":
-                        logging.info(f"Le cours {cours.identifiant} n'est pas encore ouvert pour {utilisateur.email}.")
+                        logging.info(f"Le cours {cours.identifiant} - {cours.denomination} n'est pas encore ouvert pour {utilisateur.email}.")
                         delais.append(60) #recheck dans 1 minute
                         
                 # Fenetre 15 minutes apres jusqu'à la fin
                 elif cours.heure_debut + datetime.timedelta(minutes=15) < now <= cours.heure_fin:
-                    logging.info(f"Le cours {cours.identifiant} est dans la fenêtre 2 de notification pour {utilisateur.email}.")
+                    logging.info(f"Le cours {cours.identifiant} - {cours.denomination} est dans la fenêtre 2 de notification pour {utilisateur.email}.")
                     etat_appel = cours.type_appel()
                     if etat_appel == "open":
-                        utilisateur.notifier(f"Le cours {cours.identifiant} est ouvert !")
+                        utilisateur.notifier(f"Le cours {cours.identifiant} - {cours.denomination} est ouvert !")
                         cours.deja_notifie = True
                     elif etat_appel == "deja_present":
-                        logging.info(f"Le cours {cours.identifiant} est déjà noté présent pour {utilisateur.email}.")
+                        logging.info(f"Le cours {cours.identifiant} - {cours.denomination} est déjà noté présent pour {utilisateur.email}.")
                         cours.deja_notifie = True
                     elif etat_appel == "closed":
-                        logging.info(f"Le cours {cours.identifiant} n'est pas encore ouvert pour {utilisateur.email}.")
+                        logging.info(f"Le cours {cours.identifiant} - {cours.denomination} n'est pas encore ouvert pour {utilisateur.email}.")
                         delais.append(120) #recheck dans 2 minutes
 
                 # Sinon on passe au cours suivant car pas dans la fenetre
                 else:
-                    logging.info(f"Le cours {cours.identifiant} n'est pas dans une fenêtre de notification pour {utilisateur.email}, on passe au suivant.")
+                    logging.info(f"Le cours {cours.identifiant} - {cours.denomination} n'est pas dans une fenêtre de notification pour {utilisateur.email}, on passe au suivant.")
                     fenetre_debut = cours.heure_debut - datetime.timedelta(minutes=15)
                     if fenetre_debut > now:
                         prochains_debuts.append(fenetre_debut)

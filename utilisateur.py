@@ -75,6 +75,7 @@ class Utilisateur:
             self.planning.append(Cours(
                 identifiant=presence_link.split("/")[-1] if presence_link else None,
                 utilisateur=self,
+                denomination=nom_cours,
                 heure_debut=heure_debut_dt,
                 heure_fin=heure_fin_dt
             ))
