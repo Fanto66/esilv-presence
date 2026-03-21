@@ -1,9 +1,13 @@
-from email.mime import message
+import os
+
+from dotenv import load_dotenv
 import time
 import random
 from datetime import datetime
 import logging
 from zoneinfo import ZoneInfo
+
+load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
 import requests
@@ -85,7 +89,7 @@ class Utilisateur:
     
     def se_connecter(self, playwright_instance, mot_de_passe):
         logging.info(f"Connexion de {self.email}...")
-        browser = playwright_instance.chromium.launch(headless=False)
+        browser = playwright_instance.chromium.launch(headless=True)
         self.browser_context = browser.new_context()
         self.page = self.browser_context.new_page()
 
@@ -106,6 +110,7 @@ class Utilisateur:
         logging.info(f"{self.email} connecté avec succès !")
 
     def notifier(self, message):
-        url = "https://ntfy.sh/esilv_attendance_romain"
+        ntfy_sujet = os.getenv("SUJET")
+        url = f"https://ntfy.sh/{ntfy_sujet}"
         requests.post(url, data=message)
         logging.info(f"Notification pour {self.email}: {message}")
