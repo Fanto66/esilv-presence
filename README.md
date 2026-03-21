@@ -65,7 +65,7 @@ python -m playwright install chromium
 
 1. Renommer `.env-example` en `.env`
 2. Remplir vos identifiants
-3. Ajouter votre [sujet NTFY](https://ntfy.sh/)
+3. Ajouter votre [sujet NTFY](https://ntfy.sh/) ; n'oubliez pas d'installer l'application NTFY sur votre téléphone !
 
 
 ## Lancement
