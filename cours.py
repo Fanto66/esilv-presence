@@ -12,6 +12,9 @@ class Cours:
         self.deja_notifie = False
     
     def type_appel(self):
+        return self.utilisateur.executer_avec_reconnexion(self._type_appel_impl)
+
+    def _type_appel_impl(self):
         url_appel = f"https://my.devinci.fr/student/presences/{self.identifiant}"
         logging.info(f"Vérification de l'ouverture de l'appel pour l'URL : {url_appel}")
 

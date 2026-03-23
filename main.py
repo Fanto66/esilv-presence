@@ -32,8 +32,8 @@ def main():
         logging.info("Initialisation des utilisateurs...")
         for user_info in users:
             # Création de l'utilisateur et connexion
-            utilisateur = Utilisateur(user_info["email"])
-            utilisateur.se_connecter(p, user_info["password"])
+            utilisateur = Utilisateur(user_info["email"], user_info["password"])
+            utilisateur.se_connecter(p)
 
             # Récupération des cours du jour pour l'utilisateur
             utilisateur.maj_cours_du_jour()

@@ -19,14 +19,57 @@ def human_delay(min_sec=1, max_sec=3):
     time.sleep(random.uniform(min_sec, max_sec))
 
 class Utilisateur:
-    def __init__(self, email):
+    def __init__(self, email, mot_de_passe):
         self.email = email
+        self.mot_de_passe = mot_de_passe
+        self.nbr_echec_connexion = 0
         self.planning = [] #on commence avec un planning vide
         self.browser_context = None
         self.page = None
         self.derniere_maj = None
+        self.playwright_instance = None
 
-    def maj_cours_du_jour(self): #Récupère les cours du jour et les ajoute au planning
+    def _session_est_active(self):
+        if not self.page:
+            return False
+
+        try:
+            current_url = self.page.url or ""
+        except Exception:
+            return False
+
+        return "my.devinci.fr" in current_url and "adfs.devinci.fr" not in current_url
+
+    def executer_avec_reconnexion(self, action, *args, **kwargs):
+        max_reessais = 2
+
+        for tentative in range(max_reessais + 1):
+            if not self._session_est_active():
+                logging.warning(
+                    f"Session invalide détectée pour {self.email}. Tentative de reconnexion..."
+                )
+                if not self.se_connecter():
+                    raise RuntimeError(f"Impossible de reconnecter {self.email}.")
+
+            resultat = action(*args, **kwargs)
+
+            # Si la page a redirigé vers l'authentification pendant l'action,
+            # on force une reconnexion puis on rejoue l'action.
+            if self._session_est_active():
+                return resultat
+
+            logging.warning(
+                f"Déconnexion détectée après action pour {self.email} (tentative {tentative + 1}/{max_reessais + 1})."
+            )
+
+        raise RuntimeError(
+            f"Action impossible après reconnexion automatique pour {self.email}."
+        )
+
+    def maj_cours_du_jour(self):
+        return self.executer_avec_reconnexion(self._maj_cours_du_jour_impl)
+
+    def _maj_cours_du_jour_impl(self): #Récupère les cours du jour et les ajoute au planning
         if not self.page:
             logging.error("Erreur : L'utilisateur doit être connecté pour récupérer les cours.")
             return
@@ -87,27 +130,71 @@ class Utilisateur:
         self.derniere_maj = datetime.now(PARIS_TZ)
 
     
-    def se_connecter(self, playwright_instance, mot_de_passe):
+    def se_connecter(self, playwright_instance=None):
+        if playwright_instance is not None:
+            self.playwright_instance = playwright_instance
+
+        if self.playwright_instance is None:
+            logging.error("Aucune instance Playwright disponible pour se connecter.")
+            return False
+
         logging.info(f"Connexion de {self.email}...")
-        browser = playwright_instance.chromium.launch(headless=True)
+
+        if self.browser_context:
+            try:
+                self.browser_context.close()
+            except Exception:
+                pass
+
+        browser = self.playwright_instance.chromium.launch(headless=True)
         self.browser_context = browser.new_context()
         self.page = self.browser_context.new_page()
+        try:
+            self.page.goto("https://my.devinci.fr/")
 
-        self.page.goto("https://my.devinci.fr/")
+            self.page.type("#login", self.email, delay=random.randint(50, 150))
+            human_delay()
+            self.page.click("#btn_next")
 
-        self.page.type("#login", self.email, delay=random.randint(50, 150))
-        human_delay()
-        self.page.click("#btn_next")
+            self.page.wait_for_url("**adfs.devinci.fr**")
 
-        self.page.wait_for_url("**adfs.devinci.fr**")
+            self.page.type("#passwordInput", self.mot_de_passe, delay=random.randint(70, 180))
+            human_delay()
+            self.page.click("#submitButton")
 
-        self.page.type("#passwordInput", mot_de_passe, delay=random.randint(70, 180))
-        human_delay()
-        self.page.click("#submitButton")
+            self.page.wait_for_url("https://my.devinci.fr/**")
 
-        self.page.wait_for_url("https://my.devinci.fr/**")
+            if not self.page.url.startswith("https://my.devinci.fr/"):
+                self.nbr_echec_connexion += 1
+                logging.error(
+                    f"Échec de connexion pour {self.email}. "
+                    f"Nombre d'échecs: {self.nbr_echec_connexion}"
+                )
+                if self.nbr_echec_connexion >= 3:
+                    logging.error(f"Nombre maximum d'échecs atteint pour {self.email}. Abandon de la connexion.")
+                    return False
+                else:
+                    logging.info(f"Nouvelle tentative de connexion pour {self.email} après échec...")
+                    return self.se_connecter() #réessayer la connexion
+            else:
+                self.nbr_echec_connexion = 0
+                logging.info(f"{self.email} connecté avec succès !")
+                return True
+            
+        except Exception as e:
+            self.nbr_echec_connexion += 1
+            logging.error(
+                f"Échec de connexion pour {self.email}. "
+                f"Nombre d'échecs: {self.nbr_echec_connexion}. "
+                f"Erreur: {e}"
+            )
+            if self.nbr_echec_connexion >= 3:
+                logging.error(f"Nombre maximum d'échecs atteint pour {self.email}. Abandon de la connexion.")
+                return False
+            else:
+                logging.info(f"Nouvelle tentative de connexion pour {self.email} après échec...")
+                return self.se_connecter() #réessayer la connexion
 
-        logging.info(f"{self.email} connecté avec succès !")
 
     def notifier(self, message):
         ntfy_sujet = os.getenv("SUJET")
