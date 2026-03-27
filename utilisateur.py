@@ -146,15 +146,17 @@ class Utilisateur:
             except Exception:
                 pass
 
-        browser = self.playwright_instance.chromium.launch(headless=True)
+        browser = self.playwright_instance.chromium.launch(headless=False)
         self.browser_context = browser.new_context()
         self.page = self.browser_context.new_page()
         try:
             self.page.goto("https://my.devinci.fr/")
 
-            self.page.type("#login", self.email, delay=random.randint(50, 150))
+            #self.page.type("#login", self.email, delay=random.randint(50, 150)) #ancienne page de login
+            self.page.type("#email", self.email, delay=random.randint(50, 150)) #nouvelle page de login
             human_delay()
-            self.page.click("#btn_next")
+            #self.page.click("#btn_next") #ancienne page de login
+            self.page.click('button.btn-primary') #nouvelle page de login
 
             self.page.wait_for_url("**adfs.devinci.fr**")
 
