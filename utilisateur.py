@@ -146,7 +146,7 @@ class Utilisateur:
             except Exception:
                 pass
 
-        browser = self.playwright_instance.chromium.launch(headless=False)
+        browser = self.playwright_instance.chromium.launch(headless=True)
         self.browser_context = browser.new_context()
         self.page = self.browser_context.new_page()
         try:
