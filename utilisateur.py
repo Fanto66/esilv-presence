@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.INFO)
 
 import requests
 from cours import Cours
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 PARIS_TZ = ZoneInfo("Europe/Paris")
 
@@ -85,13 +86,21 @@ class Utilisateur:
         # Vérification de la présence de cours ajd
         self.page.wait_for_selector("body")
         contenu = self.page.inner_text("body").lower()
-        if "Pas de cours de prévu" in contenu:
+        if "pas de cours de prévu" in contenu:
             logging.info(f"Aucun cours prévu aujourd'hui pour {self.email}.")
             self.derniere_maj = datetime.now(PARIS_TZ)
             return
 
         #sinon
-        self.page.wait_for_selector("#body_presences")
+        try:
+            self.page.wait_for_selector("#body_presences", state="attached", timeout=8000)
+        except PlaywrightTimeoutError:
+            logging.info(
+                f"Aucun tableau de présences détecté pour {self.email}."
+            )
+            self.derniere_maj = datetime.now(PARIS_TZ)
+            return
+
         rows = self.page.query_selector_all("#body_presences tr")
         for row in rows:
             cols = row.query_selector_all("td")
